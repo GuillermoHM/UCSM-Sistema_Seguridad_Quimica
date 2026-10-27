@@ -2,11 +2,18 @@ const express = require('express');
 const cors = require('cors');
 const { supabase } = require('./config/supabase');
 
+const catalogoRoutes = require('./routes/catalogo.routes');
+const fdsRoutes = require('./routes/fds.routes');
+
 const app = express();
 
 // Middlewares
 app.use(cors());
 app.use(express.json());
+
+// Rutas de la API
+app.use('/api/catalogos', catalogoRoutes);
+app.use('/api/fds', fdsRoutes);
 
 // Endpoint de verificación de estado y conexión
 app.get('/api/health', async (req, res) => {
