@@ -1,20 +1,22 @@
 const { supabase } = require('../config/supabase');
 
-// GET /api/reactivos?q=&grupo=
+// GET /api/reactivos?q=&grupo=&pictograma=
 const getReactivos = async (req, res) => {
   try {
-    const { q, grupo } = req.query;
+    const { q, grupo, pictograma } = req.query;
 
-    // Selecciona todas las columnas de 'reactivo' y la relación con 'grupo_quimico'
     let query = supabase
       .from('reactivo')
       .select(`
         *,
-        grupo_quimico (*)
+        grupo_quimico (*),
+        pictograma_reactivo (
+          pictograma_sga (*)
+        )
       `)
       .order('nombre_quimico', { ascending: true });
 
-    // Filtro libre en las 4 columnas de texto reales
+    // Filtro de texto libre
     if (q) {
       const term = q.trim();
       query = query.or(
@@ -22,7 +24,7 @@ const getReactivos = async (req, res) => {
       );
     }
 
-    // Filtro por clave foránea de grupo químico
+    // Filtro por grupo químico
     if (grupo) {
       query = query.eq('id_grupo', grupo);
     }
@@ -37,10 +39,35 @@ const getReactivos = async (req, res) => {
       });
     }
 
+    // Normalizar la respuesta: extraer pictogramas a un array plano directo
+    let dataFormateada = reactivos.map((r) => {
+      const pictogramas = (r.pictograma_reactivo || [])
+        .map((pr) => pr.pictograma_sga)
+        .filter(Boolean);
+
+      const { pictograma_reactivo, ...resto } = r;
+      return {
+        ...resto,
+        pictogramas
+      };
+    });
+
+    // Filtro por pictograma (cod_ghs ej: 'GHS02' o id_pictograma)
+    if (pictograma) {
+      const pictoTerm = pictograma.trim().toUpperCase();
+      dataFormateada = dataFormateada.filter((r) =>
+        r.pictogramas.some(
+          (p) =>
+            p.cod_ghs?.toUpperCase() === pictoTerm ||
+            String(p.id_pictograma) === pictoTerm
+        )
+      );
+    }
+
     return res.status(200).json({
       success: true,
-      count: reactivos.length,
-      data: reactivos
+      count: dataFormateada.length,
+      data: dataFormateada
     });
   } catch (err) {
     return res.status(500).json({
@@ -51,7 +78,7 @@ const getReactivos = async (req, res) => {
   }
 };
 
-// GET /api/reactivos/:identifier (resuelve por codigo_institucional o por numero_cas)
+// GET /api/reactivos/:identifier
 const getReactivoById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -61,10 +88,12 @@ const getReactivoById = async (req, res) => {
       .from('reactivo')
       .select(`
         *,
-        grupo_quimico (*)
+        grupo_quimico (*),
+        pictograma_reactivo (
+          pictograma_sga (*)
+        )
       `);
 
-    // Validación según nomenclatura oficial: 8 caracteres (ej. 26RQ0001) o numero_cas (ej. 7647-01-0)
     if (/^[0-9]{2}[A-Z]{2}[0-9]{4}$/i.test(identifier)) {
       query = query.ilike('codigo_institucional', identifier);
     } else {
@@ -80,7 +109,10 @@ const getReactivoById = async (req, res) => {
       });
     }
 
-    // Si reactivo.url_fds no viene en BD, generamos el enlace de Supabase Storage
+    const pictogramas = (reactivo.pictograma_reactivo || [])
+      .map((pr) => pr.pictograma_sga)
+      .filter(Boolean);
+
     let url_fds = reactivo.url_fds;
     if (!url_fds && reactivo.codigo_institucional) {
       const { data: publicUrlData } = supabase.storage
@@ -90,11 +122,14 @@ const getReactivoById = async (req, res) => {
       url_fds = publicUrlData ? publicUrlData.publicUrl : null;
     }
 
+    const { pictograma_reactivo, ...resto } = reactivo;
+
     return res.status(200).json({
       success: true,
       data: {
-        ...reactivo,
-        url_fds
+        ...resto,
+        url_fds,
+        pictogramas
       }
     });
   } catch (err) {

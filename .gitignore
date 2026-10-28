@@ -26,9 +26,7 @@ logs/
 # Archivos del sistema y del editor
 .DS_Store
 Thumbs.db
-.vscode/*
-!.vscode/settings.json
-!.vscode/extensions.json
+.vscode/
 .idea/
 
 # Cobertura de pruebas (SonarCloud / Jest)
