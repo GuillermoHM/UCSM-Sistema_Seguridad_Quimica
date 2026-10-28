@@ -4,6 +4,7 @@ const { supabase } = require('./config/supabase');
 
 const catalogoRoutes = require('./routes/catalogo.routes');
 const fdsRoutes = require('./routes/fds.routes');
+const authRoutes = require('./routes/auth.routes');
 
 const app = express();
 
@@ -14,6 +15,7 @@ app.use(express.json());
 // Rutas de la API
 app.use('/api/catalogos', catalogoRoutes);
 app.use('/api/fds', fdsRoutes);
+app.use('/api/auth', authRoutes);
 
 // Endpoint de verificación de estado y conexión
 app.get('/api/health', async (req, res) => {
