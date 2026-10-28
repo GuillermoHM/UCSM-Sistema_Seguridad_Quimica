@@ -1,7 +1,14 @@
 import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { Search, QrCode, Filter, RefreshCw } from 'lucide-react';
+
 import { Navbar } from './components/Navbar';
 import { ReactivoCard } from './components/ReactivoCard';
+import { QrScannerModal } from './components/QrScannerModal';
+
+import { Inicio } from './pages/Inicio';
+import { FichaTecnica } from './pages/FichaTecnica';
+
 import { fetchReactivos, fetchGruposQuimicos } from './services/reactivoService';
 
 const LISTA_PICTOGRAMAS_SGA = [
@@ -16,36 +23,32 @@ const LISTA_PICTOGRAMAS_SGA = [
   { cod: 'GHS09', label: 'Medio ambiente (GHS09)' },
 ];
 
-export const App = () => {
+// Vista principal de Catálogo
+const CatalogoPage = () => {
+  const navigate = useNavigate();
   const [reactivos, setReactivos] = useState([]);
   const [grupos, setGrupos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
   const [grupoFiltro, setGrupoFiltro] = useState('');
   const [pictoFiltro, setPictoFiltro] = useState('');
+  const [scannerAbierto, setScannerAbierto] = useState(false);
 
-  // Carga inicial de todos los grupos químicos existentes
   useEffect(() => {
     fetchGruposQuimicos().then(setGrupos);
   }, []);
 
-  // Búsqueda y filtrado reactivo con debounce de 300 ms
   useEffect(() => {
     let cancelado = false;
-
     const timeout = setTimeout(async () => {
       try {
         setLoading(true);
         const data = await fetchReactivos(busqueda, grupoFiltro, pictoFiltro);
-        if (!cancelado) {
-          setReactivos(data);
-        }
+        if (!cancelado) setReactivos(data);
       } catch (err) {
         console.error(err);
       } finally {
-        if (!cancelado) {
-          setLoading(false);
-        }
+        if (!cancelado) setLoading(false);
       }
     }, 300);
 
@@ -62,11 +65,12 @@ export const App = () => {
   };
 
   const handleVerFicha = (codigo) => {
-    alert(`Navegando a la Ficha Técnica del reactivo: ${codigo}`);
+    navigate(`/reactivos/${codigo}`);
   };
 
-  const handleAbrirScanner = () => {
-    alert('Abriendo Lector Óptico QR con cámara...');
+  const handleScanSuccess = (codigoDecodificado) => {
+    setScannerAbierto(false);
+    navigate(`/reactivos/${codigoDecodificado}`);
   };
 
   return (
@@ -74,12 +78,10 @@ export const App = () => {
       <Navbar />
 
       <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex-1">
-        {/* Título */}
         <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight mb-6">
           Catálogo de Reactivos
         </h1>
 
-        {/* Barra de Búsqueda y Botón QR */}
         <div className="flex flex-col sm:flex-row gap-3 mb-4">
           <div className="relative flex-1">
             <Search className="w-5 h-5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -93,20 +95,18 @@ export const App = () => {
           </div>
 
           <button
-            onClick={handleAbrirScanner}
-            className="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm shrink-0"
+            onClick={() => setScannerAbierto(true)}
+            className="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm shrink-0 cursor-pointer"
           >
             <QrCode className="w-5 h-5" />
             <span>Escanear QR</span>
           </button>
         </div>
 
-        {/* Fila de Filtros */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-6 border-b border-gray-200">
           <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
             <Filter className="w-4 h-4 text-gray-400 hidden sm:inline" />
 
-            {/* Selector con todos los grupos de la BD */}
             <select
               value={grupoFiltro}
               onChange={(e) => setGrupoFiltro(e.target.value)}
@@ -120,7 +120,6 @@ export const App = () => {
               ))}
             </select>
 
-            {/* Selector de Pictogramas SGA */}
             <select
               value={pictoFiltro}
               onChange={(e) => setPictoFiltro(e.target.value)}
@@ -137,7 +136,7 @@ export const App = () => {
             {(busqueda || grupoFiltro || pictoFiltro) && (
               <button
                 onClick={limpiarFiltros}
-                className="py-1.5 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium rounded-lg transition-colors"
+                className="py-1.5 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium rounded-lg transition-colors cursor-pointer"
               >
                 Limpiar filtros
               </button>
@@ -149,7 +148,6 @@ export const App = () => {
           </span>
         </div>
 
-        {/* Grilla de Tarjetas */}
         <div className="mt-6">
           {loading ? (
             <div className="py-20 flex flex-col items-center justify-center text-gray-400 gap-3">
@@ -173,7 +171,25 @@ export const App = () => {
           )}
         </div>
       </main>
+
+      <QrScannerModal
+        isOpen={scannerAbierto}
+        onClose={() => setScannerAbierto(false)}
+        onScanSuccess={handleScanSuccess}
+      />
     </div>
+  );
+};
+
+export const App = () => {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Inicio />} />
+        <Route path="/reactivos" element={<CatalogoPage />} />
+        <Route path="/reactivos/:codigo" element={<FichaTecnica />} />
+      </Routes>
+    </BrowserRouter>
   );
 };
 

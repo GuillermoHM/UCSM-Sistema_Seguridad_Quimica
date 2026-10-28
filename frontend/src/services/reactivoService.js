@@ -12,6 +12,16 @@ export const fetchReactivos = async (filtroTexto = '', idGrupo = '', pictograma 
   return json.data || [];
 };
 
+export const fetchReactivoById = async (identificador) => {
+  const res = await fetch(`${API_URL}/reactivos/${identificador}`);
+  if (!res.ok) {
+    if (res.status === 404) return null;
+    throw new Error('Error al obtener la ficha técnica');
+  }
+  const json = await res.json();
+  return json.data;
+};
+
 export const fetchGruposQuimicos = async () => {
   try {
     const res = await fetch(`${API_URL}/grupos`);
