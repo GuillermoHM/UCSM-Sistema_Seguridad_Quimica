@@ -48,9 +48,17 @@ export const Navbar = () => {
           >
             Catálogo de Reactivos
           </Link>
-          <button className="px-3 py-1.5 text-sm text-gray-400 font-medium flex items-center gap-1.5 cursor-not-allowed">
-            Verificador de Mezclas <Lock className="w-3.5 h-3.5 text-amber-500" />
-          </button>
+          
+          <Link
+            to="/mezclas"
+            className={`px-3.5 py-1.5 text-sm rounded-lg transition-all ${
+              location.pathname === '/mezclas'
+                ? 'font-semibold text-gray-900 border border-gray-400/80 bg-gray-50/50 shadow-xs'
+                : 'font-medium text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Verificador de Mezclas
+          </Link>
         </nav>
 
         {/* Acceso */}

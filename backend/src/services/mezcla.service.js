@@ -102,7 +102,7 @@ const evaluarMezclaReactivos = async (codigosReactivos = []) => {
       maxPesoGlobal = pesoActual;
     }
 
-    // --- B. EVALUACIÓN POR PICTOGRAMAS SGA (Texto libre) ---
+    // --- B. EVALUACIÓN POR PICTOGRAMAS SGA ---
     const pictosA = (rA.pictograma_reactivo || []).map(p => p.id_pictograma);
     const pictosB = (rB.pictograma_reactivo || []).map(p => p.id_pictograma);
 
@@ -113,19 +113,41 @@ const evaluarMezclaReactivos = async (codigosReactivos = []) => {
     };
 
     if (pictosA.length > 0 && pictosB.length > 0 && matrizPictos) {
+      // 1. Encontrar cruces entre los pictogramas de ambos reactivos
       const cruces = matrizPictos.filter(regla =>
         (pictosA.includes(regla.id_picto_orig) && pictosB.includes(regla.id_picto_dest)) ||
         (pictosB.includes(regla.id_picto_orig) && pictosA.includes(regla.id_picto_dest))
       );
 
       if (cruces.length > 0) {
+        // 2. Extraer observaciones únicas eliminando repeticiones bidireccionales
+        const observacionesUnicas = [
+          ...new Set(
+            cruces
+              .map(c => c.observaciones?.trim())
+              .filter(Boolean)
+          )
+        ];
+
+        // 3. Extraer detalles únicos (por restricción y observación)
+        const detallesUnicos = [];
+        const paresVistos = new Set();
+
+        cruces.forEach(c => {
+          const restr = c.restriccion ? c.restriccion.trim() : 'Restricción no especificada';
+          const obs = c.observaciones ? c.observaciones.trim() : '';
+          const clave = `${restr}:::${obs}`;
+
+          if (!paresVistos.has(clave)) {
+            paresVistos.add(clave);
+            detallesUnicos.push({ restriccion: restr, observaciones: obs });
+          }
+        });
+
         evaluacionPictogramas = {
           tiene_restriccion: true,
-          advertencias: cruces.map(c => c.observaciones).filter(Boolean).join(' ') || 'Requiere segregación física preventiva.',
-          detalles: cruces.map(c => ({
-            restriccion: c.restriccion ? c.restriccion.trim() : 'Restricción no especificada',
-            observaciones: c.observaciones ? c.observaciones.trim() : ''
-          }))
+          advertencias: observacionesUnicas.join('. ') || 'Requiere segregación física preventiva.',
+          detalles: detallesUnicos
         };
       }
     }

@@ -72,8 +72,11 @@ export const Inicio = () => {
           </button>
 
           {/* Tarjeta 3: Verificador de Mezclas (Ocupa las dos columnas en desktop) */}
-          <div className="w-full sm:col-span-2 p-5 bg-white border border-gray-200 rounded-2xl shadow-xs text-left flex items-start gap-4 opacity-90">
-            <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl shrink-0 text-gray-500">
+          <div
+            onClick={() => navigate('/mezclas')}
+            className="w-full sm:col-span-2 p-5 bg-white hover:bg-slate-50 border border-gray-200 rounded-2xl shadow-xs text-left flex items-start gap-4 cursor-pointer transition-all group"
+          >
+            <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl shrink-0 text-gray-600 group-hover:scale-105 transition-transform">
               <FlaskConical className="w-6 h-6" />
             </div>
             <div className="flex-1">
@@ -81,13 +84,12 @@ export const Inicio = () => {
                 <h2 className="font-bold text-base text-gray-900 leading-snug">
                   Verificador de Mezclas Químicas
                 </h2>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                  <Lock className="w-3 h-3 text-amber-600" />
-                  Exclusivo UCSM
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                  Acceso Activo
                 </span>
               </div>
               <p className="text-xs text-gray-500 leading-relaxed">
-                Requiere sesión institucional UCSM. Inicia sesión para continuar.
+                Evalúa la compatibilidad química y normas de segregación entre reactivos del laboratorio.
               </p>
             </div>
           </div>

@@ -8,6 +8,7 @@ import { QrScannerModal } from './components/QrScannerModal';
 
 import { Inicio } from './pages/Inicio';
 import { FichaTecnica } from './pages/FichaTecnica';
+import { VerificadorMezclas } from './pages/VerificadorMezclas';
 
 import { fetchReactivos, fetchGruposQuimicos } from './services/reactivoService';
 
@@ -188,6 +189,7 @@ export const App = () => {
         <Route path="/" element={<Inicio />} />
         <Route path="/reactivos" element={<CatalogoPage />} />
         <Route path="/reactivos/:codigo" element={<FichaTecnica />} />
+        <Route path="/mezclas" element={<VerificadorMezclas />} />
       </Routes>
     </BrowserRouter>
   );
