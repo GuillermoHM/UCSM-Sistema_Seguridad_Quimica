@@ -6,6 +6,7 @@ const catalogoRoutes = require('./routes/catalogo.routes');
 const fdsRoutes = require('./routes/fds.routes');
 const authRoutes = require('./routes/auth.routes');
 const reactivoRoutes = require('./routes/reactivo.routes');
+const mezclaRoutes = require('./routes/mezcla.routes');
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.use('/api/catalogos', catalogoRoutes);
 app.use('/api/fds', fdsRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/reactivos', reactivoRoutes);
+app.use('/api/mezclas', mezclaRoutes);
 
 // Endpoint de verificación de estado y conexión
 app.get('/api/health', async (req, res) => {
