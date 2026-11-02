@@ -1,9 +1,8 @@
 const jwt = require('jsonwebtoken');
 
-// Verifica la validez y vigencia del JWT
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // Formato "Bearer <TOKEN>"
+  const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
     return res.status(401).json({
@@ -14,17 +13,17 @@ const authenticateToken = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+    req.user = decoded; // { id_usuario, email, nombres, apellidos, rol }
     next();
   } catch (error) {
-    return res.status(403).json({
+    // 401 para cumplir el criterio de aceptación ante token inválido o expirado
+    return res.status(401).json({
       success: false,
       message: 'Token inválido o expirado.'
     });
   }
 };
 
-// Restringe el acceso a roles específicos ('GESTION', 'ACADEMICO')
 const authorizeRoles = (...allowedRoles) => {
   return (req, res, next) => {
     if (!req.user || !allowedRoles.includes(req.user.rol)) {

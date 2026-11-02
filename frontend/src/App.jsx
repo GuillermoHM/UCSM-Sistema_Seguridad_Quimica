@@ -5,10 +5,14 @@ import { Search, QrCode, Filter, RefreshCw } from 'lucide-react';
 import { Navbar } from './components/Navbar';
 import { ReactivoCard } from './components/ReactivoCard';
 import { QrScannerModal } from './components/QrScannerModal';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { AuthProvider } from './context/AuthContext';
 
 import { Inicio } from './pages/Inicio';
 import { FichaTecnica } from './pages/FichaTecnica';
 import { VerificadorMezclas } from './pages/VerificadorMezclas';
+import { MatrizIncompatibilidad } from './pages/MatrizIncompatibilidad';
+import { LoginPage } from './pages/LoginPage';
 
 import { fetchReactivos, fetchGruposQuimicos } from './services/reactivoService';
 
@@ -184,14 +188,27 @@ const CatalogoPage = () => {
 
 export const App = () => {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Inicio />} />
-        <Route path="/reactivos" element={<CatalogoPage />} />
-        <Route path="/reactivos/:codigo" element={<FichaTecnica />} />
-        <Route path="/mezclas" element={<VerificadorMezclas />} />
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Rutas Públicas */}
+          <Route path="/" element={<Inicio />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/reactivos" element={<CatalogoPage />} />
+          <Route path="/reactivos/:codigo" element={<FichaTecnica />} />
+
+          {/* Rutas Autenticadas (ACADEMICO y GESTION) */}
+          <Route element={<ProtectedRoute allowedRoles={['ACADEMICO', 'GESTION']} />}>
+            <Route path="/mezclas" element={<VerificadorMezclas />} />
+          </Route>
+
+          {/* Rutas Administrativas Exclusivas (GESTION) */}
+          <Route element={<ProtectedRoute allowedRoles={['GESTION']} />}>
+            <Route path="/matriz" element={<MatrizIncompatibilidad />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 };
 
