@@ -84,6 +84,7 @@ const getReactivoById = async (req, res) => {
     const { id } = req.params;
     const identifier = id.trim();
 
+    // Consulta relacional con grupo químico, pictogramas, EPPs y materiales de envase
     let query = supabase
       .from('reactivo')
       .select(`
@@ -91,6 +92,12 @@ const getReactivoById = async (req, res) => {
         grupo_quimico (*),
         pictograma_reactivo (
           pictograma_sga (*)
+        ),
+        epp_reactivo (
+          epp (*)
+        ),
+        material_reactivo (
+          material_envase (*)
         )
       `);
 
@@ -109,8 +116,17 @@ const getReactivoById = async (req, res) => {
       });
     }
 
+    // Aplanar relaciones a colecciones directas
     const pictogramas = (reactivo.pictograma_reactivo || [])
       .map((pr) => pr.pictograma_sga)
+      .filter(Boolean);
+
+    const epps = (reactivo.epp_reactivo || [])
+      .map((er) => er.epp)
+      .filter(Boolean);
+
+    const materiales = (reactivo.material_reactivo || [])
+      .map((mr) => mr.material_envase)
       .filter(Boolean);
 
     let url_fds = reactivo.url_fds;
@@ -122,14 +138,22 @@ const getReactivoById = async (req, res) => {
       url_fds = publicUrlData ? publicUrlData.publicUrl : null;
     }
 
-    const { pictograma_reactivo, ...resto } = reactivo;
+    // Desacoplar las tablas intermedias de unión del objeto final
+    const {
+      pictograma_reactivo,
+      epp_reactivo,
+      material_reactivo,
+      ...resto
+    } = reactivo;
 
     return res.status(200).json({
       success: true,
       data: {
         ...resto,
         url_fds,
-        pictogramas
+        pictogramas,
+        epps,
+        materiales
       }
     });
   } catch (err) {
