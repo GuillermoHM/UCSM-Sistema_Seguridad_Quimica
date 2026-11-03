@@ -5,8 +5,10 @@ import { useAuth } from '../hooks/useAuth';
 export const Navbar = () => {
   const location = useLocation();
   const { user, isAuthenticated, esGestion, logout } = useAuth();
-  
-  const enCatalogo = location.pathname.startsWith('/reactivos');
+
+  // Control de rutas activas evitando colisión entre catálogo y nuevo reactivo
+  const enNuevo = location.pathname === '/reactivos/nuevo';
+  const enCatalogo = location.pathname.startsWith('/reactivos') && !enNuevo;
   const enMatriz = location.pathname.startsWith('/matriz');
 
   return (
@@ -68,19 +70,32 @@ export const Navbar = () => {
             )}
           </Link>
 
-          {/* Acceso administrativo condicional: Solo para rol GESTION (RNF-04) */}
+          {/* Enlaces administrativos condicionales: Solo para rol GESTION */}
           {esGestion && (
-            <Link
-              to="/matriz"
-              className={`px-3.5 py-1.5 text-sm rounded-lg transition-all flex items-center gap-1.5 ${
-                enMatriz
-                  ? 'font-semibold text-gray-900 border border-gray-400/80 bg-gray-50/50 shadow-xs'
-                  : 'font-medium text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <ShieldCheck className="w-4 h-4 text-gray-700" />
-              <span>Matriz SGA</span>
-            </Link>
+            <>
+              <Link
+                to="/reactivos/nuevo"
+                className={`px-3.5 py-1.5 text-sm rounded-lg transition-all ${
+                  enNuevo
+                    ? 'font-semibold text-gray-900 border border-gray-400/80 bg-gray-50/50 shadow-xs'
+                    : 'font-medium text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Nuevo Reactivo
+              </Link>
+
+              <Link
+                to="/matriz"
+                className={`px-3.5 py-1.5 text-sm rounded-lg transition-all flex items-center gap-1.5 ${
+                  enMatriz
+                    ? 'font-semibold text-gray-900 border border-gray-400/80 bg-gray-50/50 shadow-xs'
+                    : 'font-medium text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <ShieldCheck className="w-4 h-4 text-gray-700" />
+                <span>Matriz SGA</span>
+              </Link>
+            </>
           )}
         </nav>
 

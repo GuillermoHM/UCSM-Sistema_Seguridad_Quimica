@@ -2,7 +2,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 // Obtiene el token del almacenamiento local (ajusta 'token' al nombre que uses)
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('token_ucsm');
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
@@ -30,13 +30,15 @@ export const fetchReactivoById = async (identificador) => {
 
 export const fetchGruposQuimicos = async () => {
   try {
-    const res = await fetch(`${API_URL}/catalogos/grupos-quimicos`);
+    const res = await fetch(`${API_URL}/catalogos/grupos-quimicos`, {
+      headers: { ...getAuthHeaders() }
+    });
     if (res.ok) {
       const json = await res.json();
-      return json.data || [];
+      return json.datos || json.data || [];
     }
-  } catch {
-    // Si el endpoint dedicado no está disponible, se retorna la lista base
+  } catch (err) {
+    console.error('Error al consultar grupos:', err);
   }
   return [
     { id_grupo: 1, nombre_grupo: 'Ácidos' },
@@ -47,7 +49,7 @@ export const fetchGruposQuimicos = async () => {
     { id_grupo: 6, nombre_grupo: 'Soluciones Buffer' },
     { id_grupo: 7, nombre_grupo: 'Colorantes' },
     { id_grupo: 8, nombre_grupo: 'Reactivos de Biología Molecular' },
-    { id_grupo: 9, nombre_grupo: 'Reactivos de Grado Comercial' },
+    { id_grupo: 9, nombre_grupo: 'Reactivos de Grado Comercial' }
   ];
 };
 

@@ -534,37 +534,70 @@ export const NuevoReactivo = () => {
               </div>
             </div>
 
-            {/* Pictogramas SGA */}
-            <div className="pt-4 border-t border-gray-100">
-              <label className="block text-xs font-semibold text-gray-700 mb-3">
-                Pictogramas SGA (Seleccionar)
-              </label>
-              <div className="grid grid-cols-3 sm:grid-cols-3 gap-3">
-                {catalogos.pictogramas.map((p) => {
-                  const seleccionado = formData.pictogramas_ids.includes(p.id_pictograma);
-                  return (
-                    <div
-                      key={p.id_pictograma}
-                      onClick={() => toggleArrayItem('pictogramas_ids', p.id_pictograma)}
-                      className={`p-3 rounded-xl border flex flex-col items-center justify-center cursor-pointer transition-all select-none ${
-                        seleccionado
-                          ? 'border-blue-600 bg-blue-50/30'
-                          : 'border-gray-200 bg-white hover:bg-slate-50'
-                      }`}
-                    >
-                      <div className="w-10 h-10 border border-red-600 rotate-45 flex items-center justify-center bg-white my-2">
-                        {p.url_icon ? (
-                          <img src={p.url_icon} alt={p.peligro} className="-rotate-45 w-6 h-6 object-contain" />
-                        ) : (
-                          <span className="-rotate-45 text-[9px] font-bold text-red-600">{p.cod_ghs}</span>
-                        )}
-                      </div>
-                      <span className="text-[10px] font-mono text-gray-600 mt-2">{p.cod_ghs}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            {/* Mapa de respaldo de nombres SGA */}
+            {(() => {
+            const nombresGhsMap = {
+                GHS01: 'Explosivo',
+                GHS02: 'Inflamable',
+                GHS03: 'Comburente',
+                GHS04: 'Gas a presión',
+                GHS05: 'Corrosivo',
+                GHS06: 'Toxicidad aguda',
+                GHS07: 'Irritante / Nocivo',
+                GHS08: 'Peligro grave para la salud',
+                GHS09: 'Peligro ambiental'
+            };
+
+            return (
+                <div className="pt-4 border-t border-gray-100">
+                <label className="block text-xs font-semibold text-gray-700 mb-3">
+                    Pictogramas SGA (Seleccionar)
+                </label>
+                
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {catalogos.pictogramas.map((p) => {
+                    const seleccionado = formData.pictogramas_ids.includes(p.id_pictograma);
+                    const nombrePeligro = p.peligro || p.nombre || p.descripcion || nombresGhsMap[p.cod_ghs] || '';
+
+                    return (
+                        <div
+                        key={p.id_pictograma}
+                        onClick={() => toggleArrayItem('pictogramas_ids', p.id_pictograma)}
+                        className={`p-3 rounded-xl border flex flex-col items-center justify-center text-center cursor-pointer transition-all select-none ${
+                            seleccionado
+                            ? 'border-blue-600 bg-blue-50/40 ring-2 ring-blue-500/20 shadow-xs'
+                            : 'border-gray-200 bg-white hover:bg-slate-50 opacity-60 hover:opacity-100'
+                        }`}
+                        >
+                        {/* Imagen limpia sin rombo rojo adicional */}
+                        <div className="w-12 h-12 flex items-center justify-center my-1">
+                            {p.url_icon ? (
+                            <img
+                                src={p.url_icon}
+                                alt={nombrePeligro || p.cod_ghs}
+                                className="w-12 h-12 object-contain"
+                            />
+                            ) : (
+                            <span className="text-xs font-bold text-red-600">{p.cod_ghs}</span>
+                            )}
+                        </div>
+
+                        {/* Código estándar */}
+                        <span className="text-[11px] font-mono font-bold text-gray-800 mt-1">
+                            {p.cod_ghs}
+                        </span>
+
+                        {/* Nombre descriptivo del peligro */}
+                        <span className="text-[10px] text-gray-500 font-medium leading-tight mt-0.5 line-clamp-1">
+                            {nombrePeligro}
+                        </span>
+                        </div>
+                    );
+                    })}
+                </div>
+                </div>
+            );
+            })()}
           </div>
         )}
 
