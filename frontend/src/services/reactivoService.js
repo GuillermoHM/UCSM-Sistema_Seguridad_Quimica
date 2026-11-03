@@ -1,5 +1,11 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
+// Obtiene el token del almacenamiento local (ajusta 'token' al nombre que uses)
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 export const fetchReactivos = async (filtroTexto = '', idGrupo = '', pictograma = '') => {
   const params = new URLSearchParams();
   if (filtroTexto) params.append('q', filtroTexto);
@@ -24,7 +30,7 @@ export const fetchReactivoById = async (identificador) => {
 
 export const fetchGruposQuimicos = async () => {
   try {
-    const res = await fetch(`${API_URL}/grupos`);
+    const res = await fetch(`${API_URL}/catalogos/grupos-quimicos`);
     if (res.ok) {
       const json = await res.json();
       return json.data || [];
@@ -43,4 +49,68 @@ export const fetchGruposQuimicos = async () => {
     { id_grupo: 8, nombre_grupo: 'Reactivos de Biología Molecular' },
     { id_grupo: 9, nombre_grupo: 'Reactivos de Grado Comercial' },
   ];
+};
+
+export const fetchPictogramas = async () => {
+  const res = await fetch(`${API_URL}/catalogos/pictogramas`);
+  if (!res.ok) throw new Error('Error al cargar pictogramas');
+  const json = await res.json();
+  return json.datos || json.data || [];
+};
+
+export const fetchEpps = async () => {
+  const res = await fetch(`${API_URL}/catalogos/epp`);
+  if (!res.ok) throw new Error('Error al cargar equipos de protección');
+  const json = await res.json();
+  return json.datos || json.data || [];
+};
+
+export const fetchMateriales = async () => {
+  const res = await fetch(`${API_URL}/catalogos/materiales`);
+  if (!res.ok) throw new Error('Error al cargar materiales de envase');
+  const json = await res.json();
+  return json.datos || json.data || [];
+};
+
+// --- OPERACIONES WIZARD (INGESTA Y REGISTRO) ---
+
+// 1. Envío de FDS a Gemini (Paso 1)
+export const extraerFdsApi = async (archivoPdf) => {
+  const formData = new FormData();
+  formData.append('archivo_fds', archivoPdf);
+
+  const res = await fetch(`${API_URL}/fds/extraer`, {
+    method: 'POST',
+    headers: {
+      ...getAuthHeaders()
+    },
+    body: formData
+  });
+
+  const json = await res.json();
+  if (!res.ok) {
+    throw new Error(json.mensaje || 'Error al procesar la FDS con Gemini');
+  }
+  return json;
+};
+
+// 2. Persistencia transaccional + subida a Storage (Paso 4)
+export const crearReactivoApi = async (archivoPdf, datosReactivo) => {
+  const formData = new FormData();
+  formData.append('archivo_fds', archivoPdf);
+  formData.append('datos', JSON.stringify(datosReactivo));
+
+  const res = await fetch(`${API_URL}/reactivos`, {
+    method: 'POST',
+    headers: {
+      ...getAuthHeaders()
+    },
+    body: formData
+  });
+
+  const json = await res.json();
+  if (!res.ok) {
+    throw new Error(json.mensaje || 'Error al guardar el reactivo');
+  }
+  return json;
 };

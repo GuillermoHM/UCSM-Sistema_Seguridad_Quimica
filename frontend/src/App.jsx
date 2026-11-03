@@ -13,6 +13,7 @@ import { FichaTecnica } from './pages/FichaTecnica';
 import { VerificadorMezclas } from './pages/VerificadorMezclas';
 import { MatrizIncompatibilidad } from './pages/MatrizIncompatibilidad';
 import { LoginPage } from './pages/LoginPage';
+import { NuevoReactivo } from './pages/NuevoReactivo';
 
 import { fetchReactivos, fetchGruposQuimicos } from './services/reactivoService';
 
@@ -205,6 +206,7 @@ export const App = () => {
           {/* Rutas Administrativas Exclusivas (GESTION) */}
           <Route element={<ProtectedRoute allowedRoles={['GESTION']} />}>
             <Route path="/matriz" element={<MatrizIncompatibilidad />} />
+            <Route path="/reactivos/nuevo" element={<NuevoReactivo />} />
           </Route>
         </Routes>
       </BrowserRouter>

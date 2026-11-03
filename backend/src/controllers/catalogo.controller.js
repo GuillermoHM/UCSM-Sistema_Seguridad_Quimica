@@ -32,8 +32,22 @@ const obtenerEpp = async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('epp')
-      .select('cod_epp, nombre, propiedades')
+      .select('id_epp, nombre, propiedades')
       .order('nombre');
+
+    if (error) throw error;
+    return res.status(200).json({ exito: true, datos: data });
+  } catch (error) {
+    return res.status(500).json({ exito: false, mensaje: error.message });
+  }
+};
+
+const obtenerMaterialesEnvase = async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('material_envase')
+      .select('id_material, nombre_material, descripcion')
+      .order('id_material');
 
     if (error) throw error;
     return res.status(200).json({ exito: true, datos: data });
@@ -45,5 +59,6 @@ const obtenerEpp = async (req, res) => {
 module.exports = {
   obtenerPictogramas,
   obtenerGruposQuimicos,
-  obtenerEpp
+  obtenerEpp,
+  obtenerMaterialesEnvase
 };
