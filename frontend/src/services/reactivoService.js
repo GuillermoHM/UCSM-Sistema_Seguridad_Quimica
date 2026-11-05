@@ -116,3 +116,26 @@ export const crearReactivoApi = async (archivoPdf, datosReactivo) => {
   }
   return json;
 };
+
+// Actualizar reactivo existente
+export const actualizarReactivoApi = async (cas, archivoPdf, datosReactivo) => {
+  const formData = new FormData();
+  if (archivoPdf) {
+    formData.append('archivo_fds', archivoPdf);
+  }
+  formData.append('datos', JSON.stringify(datosReactivo));
+
+  const res = await fetch(`${API_URL}/reactivos/${cas}`, {
+    method: 'PUT',
+    headers: {
+      ...getAuthHeaders()
+    },
+    body: formData
+  });
+
+  const json = await res.json();
+  if (!res.ok) {
+    throw new Error(json.mensaje || 'Error al actualizar el reactivo.');
+  }
+  return json;
+};

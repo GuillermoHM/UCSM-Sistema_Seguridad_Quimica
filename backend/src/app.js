@@ -11,8 +11,32 @@ const matrizRoutes = require('./routes/matriz.routes');
 
 const app = express();
 
+// Configuración de CORS
+const origenesPermitidos = [
+  'http://localhost:5173',
+  process.env.FRONTEND_URL // Dominio asignado en Vercel
+].filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Permitir solicitudes directas/internas (Render health checks, Postman, curl)
+    if (!origin) return callback(null, true);
+
+    const esPermitido = origenesPermitidos.some((permitido) => 
+      origin === permitido || origin.endsWith('.vercel.app')
+    );
+
+    if (esPermitido) {
+      return callback(null, true);
+    }
+    return callback(new Error(`Acceso bloqueado por política CORS: ${origin}`));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 // Middlewares
-app.use(cors());
 app.use(express.json());
 
 // Rutas de la API

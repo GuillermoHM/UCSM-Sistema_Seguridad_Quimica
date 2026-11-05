@@ -284,8 +284,133 @@ const crearReactivo = async (req, res) => {
   }
 };
 
+// PUT /api/reactivos/:cas
+const actualizarReactivo = async (req, res) => {
+  try {
+    const { cas } = req.params;
+
+    // 1. Parsear datos si vienen como form-data (con archivo) o JSON directo
+    let datos = req.body.datos ? JSON.parse(req.body.datos) : req.body;
+
+    // 2. Criterio de aceptación 1: Bloqueo de modificación sobre numero_cas
+    delete datos.numero_cas;
+
+    // 3. Verificar existencia del reactivo
+    const { data: reactivoExistente, error: errBusqueda } = await supabase
+      .from('reactivo')
+      .select('numero_cas, codigo_institucional, url_fds')
+      .eq('numero_cas', cas)
+      .single();
+
+    if (errBusqueda || !reactivoExistente) {
+      return res.status(404).json({ exito: false, mensaje: 'Reactivo no encontrado para editar.' });
+    }
+
+    let urlFdsFinal = reactivoExistente.url_fds;
+
+    // 4. Criterio 3: Reemplazo de archivo PDF y eliminación de huérfano
+    if (req.file) {
+      // Subir el nuevo archivo
+      const fileExt = req.file.originalname.split('.').pop() || 'pdf';
+      const codLimpio = (datos.codigo_institucional || reactivoExistente.codigo_institucional).toLowerCase();
+      const nuevoPath = `fichas/fds-${codLimpio}-${Date.now()}.${fileExt}`;
+
+      const { error: errUpload } = await supabase.storage
+        .from('archivos_fds')
+        .upload(nuevoPath, req.file.buffer, {
+          contentType: req.file.mimetype || 'application/pdf',
+          upsert: true
+        });
+
+      if (errUpload) throw new Error(`Error al subir nuevo PDF: ${errUpload.message}`);
+
+      // Obtener nueva URL pública
+      const { data: urlData } = supabase.storage
+        .from('archivos_fds')
+        .getPublicUrl(nuevoPath);
+      urlFdsFinal = urlData.publicUrl;
+
+      // Eliminar el archivo huérfano anterior si existía
+      if (reactivoExistente.url_fds) {
+        try {
+          const partesUrl = reactivoExistente.url_fds.split('/archivos_fds/');
+          if (partesUrl.length > 1) {
+            const oldPath = decodeURIComponent(partesUrl[1]);
+            await supabase.storage.from('archivos_fds').remove([oldPath]);
+          }
+        } catch (errRemove) {
+          console.warn('No se pudo borrar el PDF antiguo de Storage:', errRemove.message);
+        }
+      }
+    }
+
+    // 5. Preparar actualización de la tabla reactivo
+    const datosActualizar = {
+      nombre_quimico: datos.nombre_quimico,
+      nombre_comercial: datos.nombre_comercial || null,
+      formula_quimica: datos.formula_quimica,
+      masa_molar: datos.masa_molar ? parseFloat(datos.masa_molar) : null,
+      concentracion: datos.concentracion,
+      presentacion: datos.presentacion,
+      id_grupo: datos.id_grupo ? parseInt(datos.id_grupo) : null,
+      condiciones_almac: datos.condiciones_almac || null,
+      proc_trasvase: datos.proc_trasvase || [],
+      primeros_aux: datos.primeros_aux || [],
+      control_incendio: datos.control_incendio || [],
+      control_derrame: datos.control_derrame || [],
+      url_fds: urlFdsFinal
+    };
+
+    if (datos.codigo_institucional) {
+      datosActualizar.codigo_institucional = datos.codigo_institucional.toUpperCase();
+    }
+
+    const { error: errUpdate } = await supabase
+      .from('reactivo')
+      .update(datosActualizar)
+      .eq('numero_cas', cas);
+
+    if (errUpdate) throw errUpdate;
+
+    // 6. Actualizar relaciones N:M solo si vienen definidas en el payload
+    if (Array.isArray(datos.pictogramas_ids)) {
+      await supabase.from('pictograma_reactivo').delete().eq('numero_cas', cas);
+      if (datos.pictogramas_ids.length > 0) {
+        const filas = datos.pictogramas_ids.map((id) => ({ numero_cas: cas, id_pictograma: id }));
+        await supabase.from('pictograma_reactivo').insert(filas);
+      }
+    }
+
+    if (Array.isArray(datos.epp_ids)) {
+      await supabase.from('epp_reactivo').delete().eq('numero_cas', cas);
+      if (datos.epp_ids.length > 0) {
+        const filas = datos.epp_ids.map((id) => ({ numero_cas: cas, id_epp: id }));
+        await supabase.from('epp_reactivo').insert(filas);
+      }
+    }
+
+    if (Array.isArray(datos.materiales_ids)) {
+      await supabase.from('material_reactivo').delete().eq('numero_cas', cas);
+      if (datos.materiales_ids.length > 0) {
+        const filas = datos.materiales_ids.map((id) => ({ numero_cas: cas, id_material: id }));
+        await supabase.from('material_reactivo').insert(filas);
+      }
+    }
+
+    return res.status(200).json({
+      exito: true,
+      mensaje: 'Reactivo actualizado exitosamente.',
+      codigo_institucional: datosActualizar.codigo_institucional || reactivoExistente.codigo_institucional
+    });
+  } catch (error) {
+    console.error('Error al actualizar reactivo:', error);
+    return res.status(500).json({ exito: false, mensaje: error.message });
+  }
+};
+
 module.exports = {
   getReactivos,
   getReactivoById,
-  crearReactivo
+  crearReactivo,
+  actualizarReactivo
 };

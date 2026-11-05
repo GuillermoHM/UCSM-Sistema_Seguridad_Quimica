@@ -10,16 +10,18 @@ import {
   Flame,
   Shield,
   ArrowRightLeft,
-  X,
+  X,  
   RefreshCw,
   Info
 } from 'lucide-react';
 import { Navbar } from '../components/Navbar';
 import { fetchReactivoById } from '../services/reactivoService';
+import { useAuth } from '../hooks/useAuth';
 
 export const FichaTecnica = () => {
   const { codigo } = useParams();
   const navigate = useNavigate();
+  const { esGestion } = useAuth();
 
   const [reactivo, setReactivo] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -129,20 +131,23 @@ export const FichaTecnica = () => {
           <div className="flex items-center gap-2.5 shrink-0">
             <button
               onClick={abrirFDS}
-              className="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium flex items-center gap-2 shadow-xs transition-colors"
+              className="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
             >
               <FileDown className="w-4 h-4 text-gray-600" />
               <span>Descargar FDS (PDF)</span>
             </button>
 
-            <button
-              onClick={() => alert(`Editor de reactivo: ${reactivo.codigo_institucional}`)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 shadow-xs transition-colors"
-            >
-              <Pencil className="w-4 h-4" />
-              <span className="hidden sm:inline">Editar Ficha</span>
-              <span className="sm:hidden">Editar</span>
-            </button>
+            {/* Botón de edición conectado a la ruta /reactivos/editar/:identificador */}
+            {esGestion && (
+              <button
+                onClick={() => navigate(`/reactivos/editar/${reactivo.codigo_institucional}`)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
+              >
+                <Pencil className="w-4 h-4" />
+                <span className="hidden sm:inline">Editar Ficha</span>
+                <span className="sm:hidden">Editar</span>
+              </button>
+            )}
           </div>
         </div>
 

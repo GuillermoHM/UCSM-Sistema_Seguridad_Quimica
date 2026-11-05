@@ -9,7 +9,8 @@ const { authenticateToken, authorizeRoles } = require('../middlewares/auth.middl
 const {
   getReactivos,
   getReactivoById,
-  crearReactivo
+  crearReactivo,
+  actualizarReactivo
 } = require('../controllers/reactivo.controller');
 
 // Rutas de consulta pública / autenticada
@@ -24,6 +25,16 @@ router.post(
   uploadPdf.single('archivo_fds'),
   handleUploadError,
   crearReactivo
+);
+
+// Ruta de actualización: requiere rol GESTION y permite PDF opcional
+router.put(
+  '/:cas',
+  authenticateToken,
+  authorizeRoles('GESTION'),
+  uploadPdf.single('archivo_fds'),
+  handleUploadError,
+  actualizarReactivo
 );
 
 module.exports = router;

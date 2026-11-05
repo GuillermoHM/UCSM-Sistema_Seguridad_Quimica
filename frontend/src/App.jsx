@@ -14,6 +14,7 @@ import { VerificadorMezclas } from './pages/VerificadorMezclas';
 import { MatrizIncompatibilidad } from './pages/MatrizIncompatibilidad';
 import { LoginPage } from './pages/LoginPage';
 import { NuevoReactivo } from './pages/NuevoReactivo';
+import { EditarReactivo } from './pages/EditarReactivo';
 
 import { fetchReactivos, fetchGruposQuimicos } from './services/reactivoService';
 
@@ -207,6 +208,7 @@ export const App = () => {
           <Route element={<ProtectedRoute allowedRoles={['GESTION']} />}>
             <Route path="/matriz" element={<MatrizIncompatibilidad />} />
             <Route path="/reactivos/nuevo" element={<NuevoReactivo />} />
+            <Route path="/reactivos/editar/:identificador" element={<EditarReactivo />} />
           </Route>
         </Routes>
       </BrowserRouter>
