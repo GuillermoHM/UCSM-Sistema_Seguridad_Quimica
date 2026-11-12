@@ -1,10 +1,14 @@
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { FlaskConical, Lock, Menu, ShieldCheck, LogOut } from 'lucide-react';
+import { FlaskConical, Lock, Menu, X, ShieldCheck, LogOut } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
 export const Navbar = () => {
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const location = useLocation();
   const { user, isAuthenticated, esGestion, logout } = useAuth();
+
+  const cerrarMenu = () => setMenuAbierto(false);
 
   // Control de rutas activas evitando colisión entre catálogo y nuevo reactivo
   const enNuevo = location.pathname === '/reactivos/nuevo';
@@ -17,11 +21,16 @@ export const Navbar = () => {
         
         {/* Identidad Institucional */}
         <div className="flex items-center gap-3">
-          <button className="md:hidden p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg">
-            <Menu className="w-6 h-6" />
+          <button
+            type="button"
+            onClick={() => setMenuAbierto(!menuAbierto)}
+            className="md:hidden p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors"
+            aria-label={menuAbierto ? 'Cerrar menú' : 'Abrir menú'}
+          >
+            {menuAbierto ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
           
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/" onClick={cerrarMenu} className="flex items-center gap-2">
             <div className="border border-gray-300 rounded p-1.5 flex items-center justify-center">
               <FlaskConical className="w-5 h-5 text-gray-800" />
             </div>
@@ -32,7 +41,7 @@ export const Navbar = () => {
           </Link>
         </div>
 
-        {/* Enlaces de Navegación */}
+        {/* Enlaces de Navegación (Desktop) */}
         <nav className="hidden md:flex items-center gap-2">
           <Link
             to="/"
@@ -124,12 +133,102 @@ export const Navbar = () => {
               to="/login"
               className="px-3.5 py-1.5 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              [Iniciar Sesión]
+              Iniciar Sesión
             </Link>
           )}
         </div>
 
       </div>
+
+      {/* Menú Desplegable en Móvil */}
+      {menuAbierto && (
+        <div className="md:hidden border-t border-gray-200 bg-white px-4 pt-3 pb-5 space-y-1 shadow-lg animate-in slide-in-from-top-2 duration-150">
+          <Link
+            to="/"
+            onClick={cerrarMenu}
+            className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              location.pathname === '/'
+                ? 'bg-gray-100 text-gray-900 font-semibold'
+                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+            }`}
+          >
+            Inicio
+          </Link>
+
+          <Link
+            to="/reactivos"
+            onClick={cerrarMenu}
+            className={`block px-3 py-2 rounded-lg text-sm transition-colors ${
+              enCatalogo
+                ? 'bg-gray-100 text-gray-900 font-semibold'
+                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+            }`}
+          >
+            Catálogo de Reactivos
+          </Link>
+
+          <Link
+            to="/mezclas"
+            onClick={cerrarMenu}
+            className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
+              location.pathname === '/mezclas'
+                ? 'bg-gray-100 text-gray-900 font-semibold'
+                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+            }`}
+          >
+            <span>Verificador de Mezclas</span>
+            {!isAuthenticated && (
+              <Lock className="w-4 h-4 text-amber-500 shrink-0" />
+            )}
+          </Link>
+
+          {/* Rutas administrativas en móvil */}
+          {esGestion && (
+            <div className="pt-2 border-t border-gray-100 space-y-1">
+              <span className="block px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+                Administración
+              </span>
+              <Link
+                to="/reactivos/nuevo"
+                onClick={cerrarMenu}
+                className={`block px-3 py-2 rounded-lg text-sm transition-colors ${
+                  enNuevo
+                    ? 'bg-gray-100 text-gray-900 font-semibold'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                }`}
+              >
+                Nuevo Reactivo
+              </Link>
+              <Link
+                to="/matriz"
+                onClick={cerrarMenu}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                  enMatriz
+                    ? 'bg-gray-100 text-gray-900 font-semibold'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                }`}
+              >
+                <ShieldCheck className="w-4 h-4 text-gray-700" />
+                <span>Matriz SGA</span>
+              </Link>
+            </div>
+          )}
+
+          {/* Datos del usuario en móvil */}
+          {isAuthenticated && (
+            <div className="pt-3 border-t border-gray-200 mt-2 flex items-center justify-between px-3">
+              <div className="flex flex-col">
+                <span className="text-xs font-semibold text-gray-900">
+                  {user?.nombres || user?.email?.split('@')[0]}
+                </span>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-600">
+                  Rol: {user?.rol}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </header>
   );
 };
