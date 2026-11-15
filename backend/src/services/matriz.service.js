@@ -6,7 +6,6 @@ const supabase = supabaseModule.supabase || supabaseModule;
 // ==========================================
 
 const obtenerMatrizGrupos = async () => {
-  // Obtener todos los grupos químicos para las cabeceras
   const { data: grupos, error: errGrupos } = await supabase
     .from('grupo_quimico')
     .select('id_grupo, nombre_grupo, descripcion')
@@ -14,7 +13,6 @@ const obtenerMatrizGrupos = async () => {
 
   if (errGrupos) throw new Error('Error al obtener grupos químicos: ' + errGrupos.message);
 
-  // Obtener todas las reglas de incompatibilidad de grupos
   const { data: reglas, error: errReglas } = await supabase
     .from('incompatibilidad_grupoq')
     .select('id_grupo_orig, id_grupo_dest, nivel_riesgo, descripcion, medidas');
@@ -35,10 +33,15 @@ const guardarReglaGrupo = async ({ id_grupo_orig, id_grupo_dest, nivel_riesgo, d
     throw new Error('Los identificadores de grupo deben ser números válidos.');
   }
 
-  // Si se clasifica como Compatible o se vacía el riesgo, se remueven las reglas de la BD
-  const esCompatible = !nivel_riesgo || nivel_riesgo.trim().toLowerCase() === 'compatible';
+  const riesgoLimpio = nivel_riesgo ? nivel_riesgo.trim() : '';
+  const descLimpia = descripcion ? descripcion.trim() : '';
+  const medLimpia = medidas ? medidas.trim() : '';
 
-  if (esCompatible) {
+  const esCompatible = !riesgoLimpio || riesgoLimpio.toLowerCase() === 'compatible';
+  const tieneContenido = descLimpia !== '' || medLimpia !== '';
+
+  // Caso 1: Compatible SIN notas técnicas -> Eliminar registro (matriz dispersa por defecto)
+  if (esCompatible && !tieneContenido) {
     const { error: errDel } = await supabase
       .from('incompatibilidad_grupoq')
       .delete()
@@ -48,18 +51,19 @@ const guardarReglaGrupo = async ({ id_grupo_orig, id_grupo_dest, nivel_riesgo, d
     return { accion: 'eliminado', id_grupo_orig: orig, id_grupo_dest: dest };
   }
 
-  // Si tiene riesgo (Crítico, Severo, Moderado), se preparan los registros simétricos
+  // Caso 2: Compatible CON notas O con riesgo activo -> Persistir vía UPSERT
+  const nivelFinal = esCompatible ? 'Compatible' : riesgoLimpio;
+
   const payloadBase = {
-    nivel_riesgo: nivel_riesgo.trim(),
-    descripcion: descripcion ? descripcion.trim() : '',
-    medidas: medidas ? medidas.trim() : ''
+    nivel_riesgo: nivelFinal,
+    descripcion: descLimpia,
+    medidas: medLimpia
   };
 
   const registros = [
     { id_grupo_orig: orig, id_grupo_dest: dest, ...payloadBase }
   ];
 
-  // Si no es la diagonal principal (mismo grupo), se genera la contraparte simétrica
   if (orig !== dest) {
     registros.push({
       id_grupo_orig: dest,
@@ -82,7 +86,6 @@ const guardarReglaGrupo = async ({ id_grupo_orig, id_grupo_dest, nivel_riesgo, d
 // ==========================================
 
 const obtenerMatrizPictogramas = async () => {
-  // Obtener el catálogo de pictogramas SGA
   const { data: pictogramas, error: errPicto } = await supabase
     .from('pictograma_sga')
     .select('id_pictograma, cod_ghs, peligro, url_icon')
@@ -90,7 +93,6 @@ const obtenerMatrizPictogramas = async () => {
 
   if (errPicto) throw new Error('Error al obtener pictogramas SGA: ' + errPicto.message);
 
-  // Obtener todas las reglas de incompatibilidad de pictogramas
   const { data: reglas, error: errReglas } = await supabase
     .from('incompatibilidad_pictograma')
     .select('id_picto_orig, id_picto_dest, restriccion, observaciones');
@@ -111,10 +113,16 @@ const guardarReglaPictograma = async ({ id_picto_orig, id_picto_dest, restriccio
     throw new Error('Los identificadores de pictograma deben ser números válidos.');
   }
 
-  // Si se vacía la restricción, se elimina la regla de la BD
-  const esVacio = !restriccion || !restriccion.trim();
+  const restLimpia = restriccion ? restriccion.trim() : '';
+  const obsLimpia = observaciones ? observaciones.trim() : '';
 
-  if (esVacio) {
+  const esPermitido = !restLimpia || 
+                      restLimpia.toLowerCase() === 'permitido' || 
+                      restLimpia.toLowerCase() === 'compatible';
+  const tieneObservaciones = obsLimpia !== '';
+
+  // Caso 1: Permitido SIN observaciones -> Limpiar fila
+  if (esPermitido && !tieneObservaciones) {
     const { error: errDel } = await supabase
       .from('incompatibilidad_pictograma')
       .delete()
@@ -124,9 +132,12 @@ const guardarReglaPictograma = async ({ id_picto_orig, id_picto_dest, restriccio
     return { accion: 'eliminado', id_picto_orig: orig, id_picto_dest: dest };
   }
 
+  // Caso 2: Con restricción activa O permitido con observaciones -> Guardar
+  const restriccionFinal = esPermitido ? 'PERMITIDO' : restLimpia;
+
   const payloadBase = {
-    restriccion: restriccion.trim(),
-    observaciones: observaciones ? observaciones.trim() : ''
+    restriccion: restriccionFinal,
+    observaciones: obsLimpia
   };
 
   const registros = [
