@@ -126,10 +126,20 @@ export const MatrizIncompatibilidad = () => {
   const obtenerColorPicto = (regla, esDiagonal) => {
     if (esDiagonal) return 'bg-slate-100 text-slate-400 border-slate-200';
     if (!regla || !regla.restriccion) return 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100/80';
+    
     const r = regla.restriccion.toLowerCase();
+    
+    // Rojo: Prohibido / Incompatible
     if (r.includes('prohibido') || r.includes('incompatible') || r.includes('no almacenar')) {
       return 'bg-red-100 text-red-700 border-red-200 hover:bg-red-200/80 font-bold';
     }
+    
+    // Verde: Permitido / Compatible (incluso si tiene observaciones guardadas)
+    if (r.includes('permitido') || r.includes('compatible') || r.includes('sin restriccion')) {
+      return 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100/80';
+    }
+    
+    // Amarillo: Cualquier restricción intermedia o condicionada
     return 'bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-200/80 font-semibold';
   };
 
@@ -379,9 +389,17 @@ export const MatrizIncompatibilidad = () => {
                           const esDiag = fila.id_pictograma === col.id_pictograma;
                           const regla = obtenerReglaPictograma(fila.id_pictograma, col.id_pictograma);
                           const claseColor = obtenerColorPicto(regla, esDiag);
+                          const rest = regla?.restriccion?.toLowerCase() || '';
+                          const esPermitido = !rest || rest.includes('permitido') || rest.includes('compatible');
+                          const esProhibido = rest.includes('prohibido') || rest.includes('incompatible');
+
                           const etiqueta = esDiag
                             ? '-'
-                            : regla?.restriccion ? 'Restringido' : 'Permitido';
+                            : esProhibido
+                            ? 'Prohibido'
+                            : esPermitido
+                            ? 'Permitido'
+                            : 'Restringido';
 
                           return (
                             <td key={col.id_pictograma} className="p-1.5 border-b border-gray-100">
