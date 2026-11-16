@@ -9,9 +9,8 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test": "jest",
+  "test:coverage": "jest --coverage --detectOpenHandles"
   },
   "keywords": [],
   "author": "",
@@ -30,10 +29,9 @@
     "pg": "^8.23.1"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "^5.1.0",
     "express-list-endpoints": "^7.1.1",
+    "jest": "^30.5.2",
     "nodemon": "^3.1.14",
-    "supertest": "^7.3.1",
-    "vitest": "^5.1.0"
+    "supertest": "^7.3.2"
   }
 }
